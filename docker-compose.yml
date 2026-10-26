@@ -1,0 +1,15 @@
+# Yerel geliştirme için PostgreSQL: docker compose up -d
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: anka_tarim
+      POSTGRES_USER: anka
+      POSTGRES_PASSWORD: anka
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

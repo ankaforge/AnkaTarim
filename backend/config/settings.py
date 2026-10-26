@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+
+import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -73,10 +75,6 @@ CORS_ALLOWED_ORIGINS = [
     ).split(',')
     if origin.strip()
 ]
-DESKTOP_MODE = os.environ.get('ANKA_DESKTOP', 'false').lower() == 'true'
-if DESKTOP_MODE:
-    CORS_ALLOWED_ORIGINS = ['null']
-
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',')
@@ -145,11 +143,13 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+# PostgreSQL bağlantısı DATABASE_URL ile verilir: postgres://kullanici:sifre@host:5432/veritabani
+DATABASE_URL = os.environ.get('DATABASE_URL', '')
+if not DATABASE_URL:
+    raise ImproperlyConfigured('DATABASE_URL tanımlı değil. backend/.env.example dosyasına bakın.')
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.environ.get('DJANGO_SQLITE_PATH', BASE_DIR / 'db.sqlite3'),
-    }
+    'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600, conn_health_checks=True),
 }
 
 
@@ -175,9 +175,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'tr'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Istanbul'
 
 USE_I18N = True
 

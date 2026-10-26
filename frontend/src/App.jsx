@@ -943,18 +943,6 @@ function App() {
   };
 
   const printReceiptHtml = async (html) => {
-    if (window.electron?.printHtml) {
-      try {
-        const ok = await window.electron.printHtml(html);
-        if (ok) return;
-        window.alert("Fiş yazdırılamadı. Varsayılan yazıcı bağlantısını kontrol edin.");
-      } catch (error) {
-        console.error("Elektron yazdırma çağrısı başarısız oldu:", error);
-        window.alert("Fiş yazdırılamadı. Yazıcı bağlantısını kontrol edin.");
-      }
-      return;
-    }
-
     const receiptWindow = window.open("", "_blank", "width=420,height=720");
     if (receiptWindow) {
       receiptWindow.document.write(html);

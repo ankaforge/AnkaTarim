@@ -15,8 +15,6 @@ dist-ssr
 .env.*
 !.env.example
 backend/staticfiles/
-backend/desktop-build/
-frontend/release/
 
 # Editor directories and files
 .vscode/*
@@ -28,3 +26,16 @@ frontend/release/
 *.njsproj
 *.sln
 *.sw?
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Yerel veritabanları
+*.sqlite3
+*.sqlite3.*
+
+# Vite önbelleği
+.vite/
