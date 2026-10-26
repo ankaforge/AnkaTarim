@@ -1,0 +1,39 @@
+{% extends "admin/base_site.html" %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Ana sayfa</a>
+  &rsaquo; <a href="{% url 'admin:subscriptions_subscription_changelist' %}">Abonelikler</a>
+  &rsaquo; Yenile
+</div>
+{% endblock %}
+
+{% block content %}
+<p>Aşağıdaki abonelikler birer dönem uzatılacak. Dönemi henüz bitmemiş ya da ek süredeki paketlerde yeni dönem eski bitiş tarihinin ertesi günü başlar; süresi tamamen dolmuş paketlerde bugünden başlar.</p>
+<ul>
+  {% for subscription in subscriptions %}
+    <li>{{ subscription.company }} — {{ subscription.package }} (bitiş: {{ subscription.ends_on|date:"d.m.Y" }}, {{ subscription.state_label }})</li>
+  {% endfor %}
+</ul>
+<form method="post">
+  {% csrf_token %}
+  {% for subscription in subscriptions %}
+    <input type="hidden" name="{{ action_checkbox_name }}" value="{{ subscription.pk }}">
+  {% endfor %}
+  <input type="hidden" name="action" value="renew_selected">
+  <input type="hidden" name="apply" value="1">
+  <fieldset class="module aligned">
+    {% for field in form %}
+      <div class="form-row">
+        {{ field.errors }}
+        {{ field.label_tag }} {{ field }}
+        {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+      </div>
+    {% endfor %}
+  </fieldset>
+  <div class="submit-row">
+    <input type="submit" class="default" value="Yenile">
+    <a href="{% url 'admin:subscriptions_subscription_changelist' %}" class="button cancel-link">Vazgeç</a>
+  </div>
+</form>
+{% endblock %}

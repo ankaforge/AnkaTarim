@@ -213,3 +213,7 @@ export const downloadCsv = (rows, filename) => {
   link.click();
   URL.revokeObjectURL(url);
 };
+
+// Şirket profili olmayan platform yöneticisinde access boş gelir ve tüm modüller açıktır.
+export const hasModule = (user, moduleCode) =>
+  !user?.access || (user.access.modules || []).includes(moduleCode);

@@ -68,12 +68,16 @@ import {
   updateUser,
   deleteUser,
   login as loginUser,
+  getMe,
+  SESSION_ENDED_EVENT,
   updateCustomer,
   updateOlivePrice,
   updateResponsiblePerson,
   updateSortingRecord,
   updateSieveStation,
 } from "./services/api";
+import SubscriptionBanner from "./components/SubscriptionBanner";
+import { hasModule } from "./utils/appUtils";
 
 /* Eleme formu ve varsayılan işletme ayarları */
 const defaultItem = (oliveType = "Ayvalık") => ({
@@ -553,14 +557,17 @@ function App() {
 
     try {
       const activeUser = userOverride || currentUser;
+      // Mevcut alış ve satış ekranları Zeytin modülüne ait
       const canAccessPurchases =
-        activeUser?.is_superuser === true ||
-        activeUser?.can_manage_purchases === true ||
-        activeUser?.can_manage_users === true;
+        hasModule(activeUser, "olive") &&
+        (activeUser?.is_superuser === true ||
+          activeUser?.can_manage_purchases === true ||
+          activeUser?.can_manage_users === true);
       const canAccessSales =
-        activeUser?.is_superuser === true ||
-        activeUser?.can_manage_sales === true ||
-        activeUser?.can_manage_users === true;
+        hasModule(activeUser, "olive") &&
+        (activeUser?.is_superuser === true ||
+          activeUser?.can_manage_sales === true ||
+          activeUser?.can_manage_users === true);
       const [
         stationsRes,
         customersRes,
@@ -663,12 +670,32 @@ function App() {
       }
 
       setIsLoading(true);
-      await refreshData();
+      try {
+        // Paket durumu ve yetkiler her açılışta sunucudan tazelenir
+        const response = await getMe();
+        const user = { ...response.data.user, access: response.data.access };
+        window.localStorage.setItem("anka_auth_user", JSON.stringify(user));
+        setCurrentUser(user);
+        await refreshData(user);
+      } catch (error) {
+        console.error("Oturum bilgisi alınamadı", error);
+      }
       setIsLoading(false);
     };
 
     loadData();
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    const handleSessionEnded = (event) => {
+      setIsAuthenticated(false);
+      setCurrentUser(null);
+      setLoginError(event.detail || "");
+    };
+    window.addEventListener(SESSION_ENDED_EVENT, handleSessionEnded);
+    return () =>
+      window.removeEventListener(SESSION_ENDED_EVENT, handleSessionEnded);
+  }, []);
 
   useEffect(() => {
     if (!selectedStationId || !form.date) return;
@@ -700,13 +727,15 @@ function App() {
 
   useEffect(() => {
     const canAccessPurchases =
-      currentUser?.is_superuser === true ||
-      currentUser?.can_manage_purchases === true ||
-      currentUser?.can_manage_users === true;
+      hasModule(currentUser, "olive") &&
+      (currentUser?.is_superuser === true ||
+        currentUser?.can_manage_purchases === true ||
+        currentUser?.can_manage_users === true);
     const canAccessSales =
-      currentUser?.is_superuser === true ||
-      currentUser?.can_manage_sales === true ||
-      currentUser?.can_manage_users === true;
+      hasModule(currentUser, "olive") &&
+      (currentUser?.is_superuser === true ||
+        currentUser?.can_manage_sales === true ||
+        currentUser?.can_manage_users === true);
 
     if (businessMode === "producer" && !canAccessPurchases && canAccessSales) {
       setBusinessMode("merchant");
@@ -1374,7 +1403,7 @@ function App() {
 
     try {
       const response = await loginUser({ username, password });
-      const user = response.data.user;
+      const user = { ...response.data.user, access: response.data.access };
       window.localStorage.setItem("anka_auth_token", response.data.token);
       window.localStorage.setItem("anka_auth_user", JSON.stringify(user));
       setCurrentUser(user);
@@ -2036,8 +2065,11 @@ function App() {
   const canManageUsers =
     currentUser?.can_manage_users === true || currentUser?.is_superuser === true;
   const canManagePurchases =
-    currentUser?.can_manage_purchases === true || canManageUsers;
-  const canManageSales = currentUser?.can_manage_sales === true || canManageUsers;
+    hasModule(currentUser, "olive") &&
+    (currentUser?.can_manage_purchases === true || canManageUsers);
+  const canManageSales =
+    hasModule(currentUser, "olive") &&
+    (currentUser?.can_manage_sales === true || canManageUsers);
   const currentUserDisplayName = currentUser?.is_superuser
     ? "admin"
     : [currentUser?.first_name, currentUser?.last_name]
@@ -7428,6 +7460,11 @@ function App() {
               </div>
             </div>
           </header>
+
+          <SubscriptionBanner
+            access={currentUser?.access}
+            isCompanyAdmin={canManageUsers}
+          />
 
           <div className="mt-3 space-y-2 lg:hidden">
             <div className="flex gap-1 overflow-x-auto rounded-2xl bg-[#0a2140] p-1">

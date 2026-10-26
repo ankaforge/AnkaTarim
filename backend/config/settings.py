@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'corsheaders',
     'core',
+    'subscriptions',
 ]
 
 MIDDLEWARE = [
@@ -119,6 +120,13 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
 }
+
+# Paket süresi bittikten sonra erişimin açık kaldığı gün sayısı
+SUBSCRIPTION_GRACE_DAYS = int(os.environ.get('SUBSCRIPTION_GRACE_DAYS', '10'))
+# Genel admine paket bitişi için kaç gün önceden uyarı gösterileceği
+SUBSCRIPTION_WARNING_DAYS = int(os.environ.get('SUBSCRIPTION_WARNING_DAYS', '30'))
+# Yeni şirket kurulumunda genel admine iletilen giriş adresi
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
 
 ROOT_URLCONF = 'config.urls'
 

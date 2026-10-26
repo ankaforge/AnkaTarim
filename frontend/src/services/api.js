@@ -18,8 +18,31 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
+// Oturum kapandığında (token geçersiz, şirket donduruldu veya paket süresi doldu) arayüze haber verir.
+export const SESSION_ENDED_EVENT = 'anka:session-ended';
+
+API.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const { status, data } = error.response || {};
+    const companyBlocked = status === 403 && String(data?.code || '').startsWith('company_');
+    const hasToken = Boolean(window.localStorage.getItem('anka_auth_token'));
+    if (hasToken && (status === 401 || companyBlocked)) {
+      window.localStorage.removeItem('anka_auth_token');
+      window.localStorage.removeItem('anka_auth_user');
+      window.dispatchEvent(
+        new CustomEvent(SESSION_ENDED_EVENT, {
+          detail: companyBlocked ? data.detail : 'Oturumunuz sona erdi. Lütfen tekrar giriş yapın.',
+        }),
+      );
+    }
+    return Promise.reject(error);
+  },
+);
+
 // Kimlik doğrulama ve kullanıcı yönetimi
 export const login = (data) => API.post('login/', data);
+export const getMe = () => API.get('me/');
 export const getUsers = () => API.get('users/');
 export const createUser = (data) => API.post('users/', data);
 export const updateUser = (id, data) => API.patch(`users/${id}/`, data);

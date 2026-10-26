@@ -26,6 +26,7 @@ from core.views import (
     InventoryEntryViewSet,
     ShipmentViewSet,
     login_view,
+    me_view,
 )
 
 router = DefaultRouter()
@@ -58,6 +59,7 @@ def home(request):
 urlpatterns = [
     path('', home, name='home'),
     path('api/login/', login_view, name='login'),
+    path('api/me/', me_view, name='me'),
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
 ]

@@ -61,34 +61,40 @@
 
 ---
 
-## Faz 1 — Platform çekirdeği: şirket, paket, abonelik
+## Faz 1 — Platform çekirdeği: şirket, paket, abonelik ✅ (2026-10-26)
 
-Yeni Django app: `platform` (veya `accounts`).
+Yeni Django app: `backend/subscriptions/`. 59 test geçiyor (35 mevcut + 24 yeni), SQLite üzerinde çalıştırıldı; PostgreSQL üzerinde henüz çalıştırılmadı.
 
-- [ ] **`Module`** (sabit liste / seed): `olive_purchase`, `olive_sales`, `oil_pressing`, `fruit`, `meysu`, `logistics`, `accounting`, `reports`, `users`.
-- [ ] **`Package`**: ad (Zeytin, Zeytinyağı, Meyve, Meysu, Full), açıklama, liste fiyatı, `modules` (M2M), süre (varsayılan 365 gün), aktif mi.
-- [ ] **`Company`** genişletmesi: vergi no/daire, yetkili, telefon, e-posta, adres, logo (fiş ve PDF için), not, `created_at`.
-- [ ] **`Subscription`** (yenileme takip modeli):
-  - Alanlar: şirket, paket, başlangıç, bitiş, durum (`active` / `expired` / `frozen` / `cancelled`), ücret, ödeme durumu, ödeme tarihi, ödeme yöntemi, fatura/dekont no, ankaforge sipariş no, not, işlemi yapan admin.
-  - Yenileme her seferinde **yeni kayıt** olarak tutulsun; böylece geçmiş görünür.
-- [ ] `Company.active_modules()`: bugün geçerli aboneliklerden modül kümesini döndürür.
-- [ ] `Company.is_frozen`: geçerli abonelik yoksa `True`.
-- [ ] **Ek süre ve dondurma (Karar 3):**
-  - [ ] Abonelik durumu: `active` → bitiş tarihi geçince `grace` (10 gün, erişim açık, uyarı bandı) → `expired` (erişim kapalı).
-  - [ ] Ek süre gün sayısı ayardan okunsun (`SUBSCRIPTION_GRACE_DAYS = 10`).
-  - [ ] `login_view`: şirket donmuşsa "Paket süreniz doldu, AnkaForge ile iletişime geçin" mesajı dönsün.
-  - [ ] Tüm API isteklerinde (permission/middleware) donmuş şirketin token'ı 403 alsın.
-  - [ ] Veriye hiçbir şekilde dokunulmasın; yeniden aktifleştirince her şey yerinde olsun.
-- [ ] **Günlük kontrol:** `manage.py check_subscriptions` komutu yazılsın (cron / Render cron job).
-  - Süresi dolanları `expired` yapar.
-  - Bitişe 30, 7 ve 1 gün kalanları listeler (e-posta ile bildirim opsiyonel).
-- [ ] **Django admin ekranları:**
-  - [ ] Şirket formunda abonelikler inline görünsün; genel admin kullanıcısı da aynı ekrandan oluşturulabilsin.
-  - [ ] Abonelik listesi: kalan gün sütunu (renkli), filtreler (biten / 30 gün içinde bitecek / donmuş / ödeme bekleyen), arama.
-  - [ ] Admin aksiyonları: **"1 yıl yenile"** (yeni kayıt + ödeme bilgisi), **"Dondur"**, **"Aktifleştir"**.
-  - [ ] "Yeni şirket kur" akışı: şirket + paket + genel admin kullanıcı adı ve geçici şifre tek adımda. Çıktısı WhatsApp/e-posta ile iletilecek hazır metin olsun.
-- [ ] Frontend: oturum yanıtında `active_modules`, `subscription_ends_at` ve `grace_ends_at` gelsin. Menüde sadece paketteki modüller görünsün. Bitişe 30 gün kala genel admine uyarı bandı, ek süre boyunca tüm kullanıcılara "X gün sonra erişim kapanacak" bandı gösterilsin.
-- [ ] Testler: bitişten sonraki 10 gün erişim açık kalsın, 11. gün giriş ve API engellensin; yenileyince açılsın, veri yerinde kalsın; paket dışı modül endpoint'i 403 versin; yıl ortasında eklenen paketin kendi bitiş tarihi olsun.
+- [x] **`Module`**: `users`, `parties`, `logistics`, `reports` çekirdek modüller (her pakette açık, Karar 2); `olive`, `olive_oil`, `fruit`, `meysu` ürün modülleri. Seed: `0002_seed_modules_and_packages`.
+- [x] **`Package`**: Zeytin, Zeytinyağı, Meyve, Meysu, Full; liste fiyatı (admin'den girilecek, şu an 0), süre 365 gün, paket bazlı ek süre (`grace_days`; boşsa varsayılan 10 gün).
+- [x] **Demo paketi**: 10 gün, tüm modüller açık, **ek süre yok** (11. gün kapanır). Kurulum ekranında seçilirse ücret 0 ve ödeme "Ücretsiz / deneme" olur. Mevcut şirketlere otomatik abonelik verilmiyor (canlıda şirket yok).
+- [x] **`Company`** genişletmesi: vergi no/daire, yetkili, telefon, e-posta, adres, not. `is_active=False` → elle dondurma.
+  - [ ] Logo (fiş ve PDF için): medya depolama kararı ile birlikte (Faz 14).
+- [x] **`Subscription`** (yenileme takip modeli): şirket, paket, başlangıç, bitiş, ücret, ödeme durumu/tarihi/yöntemi, dekont no, ankaforge sipariş no, yenilenen kayıt, iptal, not, kaydeden admin. Her yenileme yeni kayıt; silme kapalı, iptal var.
+  - Durum veritabanında tutulmuyor, tarihten anlık hesaplanıyor: `upcoming` / `active` / `grace` / `expired` / `cancelled`. Böylece cron çalışmasa bile erişim doğru günde kapanır.
+- [x] Erişim servisi `subscriptions/access.py` → `get_company_access(company)`: durum (`active` / `grace` / `expired` / `frozen`), açık modüller, bitiş, ek süre bitişi, kalan gün, paket listesi.
+- [x] **Ek süre ve dondurma (Karar 3 ve 4):**
+  - [x] Bitişten sonra paketin ek süresi (varsayılan `SUBSCRIPTION_GRACE_DAYS` = 10, demoda 0) boyunca erişim açık; 11. gün giriş ve tüm API 403 (`code: company_expired`).
+  - [x] Paket bazlı: sadece süresi dolan paketin modülleri kapanır (`code: module_not_in_package`); hiç geçerli paket kalmazsa şirket tamamen kapanır.
+  - [x] Elle dondurulan şirket: `code: company_frozen`.
+  - [x] Veriye dokunulmuyor; yenileme veya aktifleştirme ile her şey yerinde açılıyor (testli).
+  - [x] Platform süper kullanıcısı bu kontrollerden etkilenmiyor.
+- [x] Erken yenileme veya ek sürede yenileme: yeni dönem eski bitişin ertesi günü başlar (boşluk/çakışma yok). Tamamen dolmuşsa bugünden başlar.
+- [x] **`manage.py check_subscriptions`**: 30 gün içinde bitecek, ek sürede olan ve bugün kapanan abonelikleri telefonla listeler. Kayıt değiştirmez.
+  - [ ] Sunucuda günlük cron olarak kurulması (Faz 14). E-posta bildirimi opsiyonel.
+- [x] **Django admin:**
+  - [x] Şirket listesi: erişim durumu rozeti, paketler, son bitiş tarihi; şirket formunda abonelikler inline.
+  - [x] Abonelik listesi: renkli durum, kalan gün / ek süre, filtreler (aktif / 30 gün içinde bitecek / ek süre / dolmuş / başlamamış / iptal, ödeme durumu, paket), arama.
+  - [x] Aksiyonlar: **"Bir dönem yenile"** (ödeme bilgisi soran ara ekranla), **"Ödendi işaretle"**, **"İptal et"**, şirket için **"Dondur"** ve **"Aktifleştir"**.
+  - [x] **"Yeni şirket kur"** ekranı (Şirketler listesinin sağ üstünde): şirket + paket + genel admin tek adımda. Geçici şifre üretilir ve WhatsApp/e-posta için hazır metin verilir. Giriş adresi `FRONTEND_URL` ayarından alınır.
+- [x] API: `POST /api/login/` ve yeni `GET /api/me/` yanıtında `access` nesnesi (`state`, `modules`, `ends_on`, `grace_ends_on`, `days_left`, `packages`, `message`).
+- [x] Frontend:
+  - [x] Açılışta `/api/me/` ile paket durumu tazelenir.
+  - [x] Erişim kapanırsa (`company_*` 403 veya 401) oturum kapanır, giriş ekranında sebep gösterilir.
+  - [x] Uyarı bandı: ek sürede tüm kullanıcılara; bitişe 30 gün kala ve tek paket ek süredeyken genel admine.
+  - [x] Mevcut alış/satış ekranları `olive` modülüne bağlandı.
+  - [ ] Diğer paketlerin menüleri ilgili fazlarda eklenecek. Şu an sadece Meyve veya Meysu paketi olan bir şirket boş bir ekran görür.
+- [ ] Not (Faz 6): `SalesOilItem` / `SalesOilPrice` şimdilik `olive` modülünde, `StorageTank` ise `olive_oil` modülünde. Sıkım modülü yazılırken yağ satışı `olive_oil` modülüne taşınacak.
 
 ---
 

@@ -1,0 +1,50 @@
+{% extends "admin/base_site.html" %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Ana sayfa</a>
+  &rsaquo; <a href="{% url 'admin:core_company_changelist' %}">Şirketler</a>
+  &rsaquo; Yeni şirket kur
+</div>
+{% endblock %}
+
+{% block content %}
+{% if result %}
+  <div class="module">
+    <h2>{{ result.company.name }} oluşturuldu</h2>
+    <p>
+      Paket: <strong>{{ result.subscription.package.name }}</strong>
+      ({{ result.subscription.starts_on|date:"d.m.Y" }} – {{ result.subscription.ends_on|date:"d.m.Y" }})<br>
+      Genel admin: <strong>{{ result.user.username }}</strong><br>
+      Geçici şifre: <strong><code>{{ result.password }}</code></strong>
+    </p>
+    <p class="help">Şifre bu sayfadan ayrıldıktan sonra tekrar gösterilmez. Aşağıdaki metni kopyalayıp WhatsApp veya e-posta ile iletin.</p>
+    <textarea readonly rows="18" style="width:100%;max-width:640px;font-family:monospace">{{ result.message }}</textarea>
+    <p>
+      <a class="button" href="{{ result.change_url }}">Şirket kaydına git</a>
+      <a class="button" href="{% url 'admin:core_company_setup' %}">Başka şirket kur</a>
+    </p>
+  </div>
+{% else %}
+  <p>Bu form şirketi, ilk paket aboneliğini ve şirketin genel admin kullanıcısını tek adımda oluşturur. Genel admin daha sonra kendi çalışanlarını uygulama içinden ekler.</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <fieldset class="module aligned">
+      <h2>Şirket</h2>
+      {% for field in form %}
+        {% if forloop.counter == 9 %}</fieldset><fieldset class="module aligned"><h2>Paket</h2>{% endif %}
+        {% if forloop.counter == 13 %}</fieldset><fieldset class="module aligned"><h2>Genel admin</h2>{% endif %}
+        <div class="form-row">
+          {{ field.errors }}
+          {{ field.label_tag }} {{ field }}
+          {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+        </div>
+      {% endfor %}
+    </fieldset>
+    <div class="submit-row">
+      <input type="submit" class="default" value="Şirketi kur">
+    </div>
+  </form>
+{% endif %}
+{% endblock %}

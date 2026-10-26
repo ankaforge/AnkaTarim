@@ -6,13 +6,26 @@ from django.db import models
 
 
 class Company(models.Model):
-    name = models.CharField(max_length=160)
+    name = models.CharField('Şirket adı', max_length=160)
     slug = models.SlugField(max_length=180, unique=True)
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(
+        'Aktif',
+        default=True,
+        help_text='Kapatılırsa paket süresinden bağımsız olarak şirketin tüm hesapları dondurulur. Veriler silinmez.',
+    )
+    tax_number = models.CharField('Vergi / TC no', max_length=20, blank=True, default='')
+    tax_office = models.CharField('Vergi dairesi', max_length=80, blank=True, default='')
+    contact_name = models.CharField('Yetkili kişi', max_length=120, blank=True, default='')
+    phone = models.CharField('Telefon', max_length=20, blank=True, default='')
+    email = models.EmailField('E-posta', blank=True, default='')
+    address = models.CharField('Adres', max_length=255, blank=True, default='')
+    notes = models.TextField('Not', blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['name']
+        verbose_name = 'Şirket'
+        verbose_name_plural = 'Şirketler'
 
     def __str__(self):
         return self.name

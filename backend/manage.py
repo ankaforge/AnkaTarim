@@ -7,8 +7,9 @@ import sys
 def main():
     """Run administrative tasks."""
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+    # Argümansız `test` sadece proje app'lerini çalıştırır (sanal ortam klasörleri taranmasın)
     if len(sys.argv) == 2 and sys.argv[1] == 'test':
-        sys.argv.append('core')
+        sys.argv.extend(['core', 'subscriptions'])
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

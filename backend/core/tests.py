@@ -6,12 +6,14 @@ from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 
 from core.models import Company, AppUserProfile, Customer, CustomerPayment, CustomerSortingItem, CustomerSortingRecord, Driver, MerchantParty, OlivePrice, ResponsiblePerson, ResponsiblePersonPayment, SalesPayment, SalesRecord, Shipment, SieveStation, Vehicle
+from subscriptions.testing import grant_package
 
 
 class CompanyTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.company = Company.objects.create(name='Test Şirket', slug='test-sirket')
+        grant_package(cls.company)
 
 
 class CompanyDeletionSafetyTest(CompanyTestCase):
@@ -153,6 +155,7 @@ class CompanyTenantIsolationTest(CompanyTestCase):
     def setUpTestData(cls):
         super().setUpTestData()
         cls.other_company = Company.objects.create(name='Diğer Şirket', slug='diger-sirket')
+        grant_package(cls.other_company)
         cls.user = User.objects.create_user(username='company-user', password='test-pass')
         AppUserProfile.objects.create(
             user=cls.user,
